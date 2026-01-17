@@ -1,4 +1,4 @@
-FROM amazoncorretto:8-alpine-jre
+FROM amazoncorretto:8-alpine
 
 EXPOSE 8083
 WORKDIR /usr/src/app
