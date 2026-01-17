@@ -1,56 +1,60 @@
 pipeline {
     agent any
-    
+
     environment {
-        SONAR_TOKEN = credentials('sonarqube-token') 
+        SONAR_TOKEN = credentials('sonarqube-token')
     }
-    
+
     stages {
         stage('Preparation') {
             steps {
-                checkout scm
+                git url: "https://github.com/22520802/NT548.Q11-Lab.git", branch: 'master'
             }
         }
-        
+
         stage('Build') {
             steps {
-                sh 'docker compose build'
+                echo 'Building...'
+                // Simulate build process
+                sh 'docker-compose build'
             }
         }
-        
+
         stage('Trivy FS Scan') {
             steps {
-                sh 'docker run --rm -v $WORKSPACE:/root/.cache/ aquasec/trivy fs . > trivy_report.txt'
+                sh 'trivy fs --exit-code 0 --severity MEDIUM,HIGH,CRITICAL . > trivy_report.txt 2>&1'
             }
         }
-        
+
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    def scannerHome = tool 'SonarScanner'
-                    // Thêm bước chờ để đảm bảo SonarQube API đã sẵn sàng
-                    echo "Waiting for SonarQube to be fully ready..."
-                    sleep 20 
-
-                    withSonarQubeEnv('SonarQube') {
-                        // Sử dụng IP 172.17.0.1 và tham số -Dsonar.token mới
-                        sh "${scannerHome}/bin/sonar-scanner " +
-                           "-Dsonar.projectKey=microservice-app " +
-                           "-Dsonar.sources=. " +
-                           "-Dsonar.exclusions=**/users-api/** " +
-                           "-Dsonar.host.url=http://172.17.0.1:9000 " +
-                           "-Dsonar.token=${SONAR_TOKEN}"
+                    echo "Starting SonarQube analysis..."
+                    def scannerHome = tool 'SonarScanner' 
+                    withSonarQubeEnv("SonarQube") {
+                    sh "echo Using scanner at: ${scannerHome}"
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.login=$SONAR_TOKEN \
+                    -Dsonar.exclusions=**/users-api/**"
                     }
                 }
             }
         }
-        
+
         stage('Deploy') {
             steps {
-                echo 'Deploying application...'
-                sh 'docker compose down'
-                sh 'docker compose up -d'
+                echo 'Deploying...'
+                sh 'docker-compose down'
+                sh 'docker-compose up -d'
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully.'
+        }
+        failure {
+            echo 'Pipeline failed.'
         }
     }
 }
