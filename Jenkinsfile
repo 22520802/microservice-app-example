@@ -15,14 +15,14 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building...'
-                // Simulate build process
                 sh 'docker compose build'
             }
         }
 
         stage('Trivy FS Scan') {
             steps {
-                sh 'trivy fs --exit-code 0 --severity MEDIUM,HIGH,CRITICAL . > trivy_report.txt 2>&1'
+                sh 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $WORKSPACE:/root/.cache/ aquasec/trivy fs --exit-code 0 --severity MEDIUM,HIGH,CRITICAL . > trivy_report.txt 2>&1'
+                sh 'cat trivy_report.txt'
             }
         }
 
@@ -32,9 +32,9 @@ pipeline {
                     echo "Starting SonarQube analysis..."
                     def scannerHome = tool 'SonarScanner' 
                     withSonarQubeEnv("SonarQube") {
-                    sh "echo Using scanner at: ${scannerHome}"
-                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.login=$SONAR_TOKEN \
-                    -Dsonar.exclusions=**/users-api/**"
+                        sh "echo Using scanner at: ${scannerHome}"
+                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.login=$SONAR_TOKEN \
+                        -Dsonar.exclusions=**/users-api/**"
                     }
                 }
             }
