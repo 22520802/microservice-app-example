@@ -19,7 +19,7 @@ pipeline {
                 script {
                    echo 'Building Docker Images...'
                    // Build app [cite: 608]
-                   sh 'docker-compose build'
+                   sh 'docker compose build'
                 }
             }
         }
@@ -58,8 +58,8 @@ pipeline {
                 script {
                     echo 'Deploying...'
                     // Deploy app 
-                    sh 'docker-compose down'
-                    sh 'docker-compose up -d'
+                    sh 'docker compose down'
+                    sh 'docker compose up -d'
                 }
             }
         }
