@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Preparation') {
             steps {
-                echo 'Pulling code from Repository...'
+                echo 'Pulling code...'
                 checkout scm
             }
         }
@@ -18,7 +18,6 @@ pipeline {
             steps {
                 script {
                    echo 'Building Docker Images...'
-                   // Sử dụng docker compose build để tạo các images từ Dockerfile đã sửa
                    sh 'docker compose build'
                 }
             }
@@ -26,8 +25,7 @@ pipeline {
         
         stage('Trivy FS Scan') {
             steps {
-                echo 'Scanning File System for security vulnerabilities...'
-                // Quét bảo mật filesystem và lưu báo cáo
+                echo 'Scanning File System...'
                 sh 'docker run --rm -v $WORKSPACE:/root/.cache/ aquasec/trivy fs . > trivy_report.txt'
                 sh 'cat trivy_report.txt' 
             }
@@ -38,7 +36,7 @@ pipeline {
                 script {
                     def scannerHome = tool 'SonarScanner'
                     withSonarQubeEnv('SonarQube') {
-                        // VIẾT LIỀN TRÊN 1 DÒNG để tránh lỗi "Unrecognized option" do khoảng trắng/nối chuỗi
+                        // SỬA TẠI ĐÂY: Dùng dấu nháy đơn bao ngoài và nháy kép cho biến để đảm bảo token dính liền vào dấu bằng
                         sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=microservice-app -Dsonar.sources=. -Dsonar.exclusions=**/users-api/** -Dsonar.host.url=http://sonarqube:9000 -Dsonar.login=${SONAR_TOKEN}"
                     }
                 }
@@ -49,10 +47,8 @@ pipeline {
             steps {
                 script {
                     echo 'Deploying Microservices...'
-                    // Dừng các container cũ và khởi chạy bản mới nhất
                     sh 'docker compose down'
                     sh 'docker compose up -d'
-                    echo 'Application is running at http://<Your-EC2-IP>:8081'
                 }
             }
         }
@@ -60,10 +56,10 @@ pipeline {
 
     post {
         success {
-            echo 'Chúc mừng! Toàn bộ Pipeline đã hoàn thành thành công.'
+            echo 'Chúc mừng! Pipeline đã hoàn thành.'
         }
         failure {
-            echo 'Pipeline thất bại. Vui lòng kiểm tra Console Output để xem chi tiết lỗi.'
+            echo 'Pipeline thất bại. Kiểm tra lại tham số SonarQube.'
         }
     }
 }
