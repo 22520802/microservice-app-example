@@ -1,4 +1,4 @@
-FROM openjdk:8-alpine
+FROM openjdk:8-jre-slim
 
 EXPOSE 8083
 WORKDIR /usr/src/app
