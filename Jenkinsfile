@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Preparation') {
             steps {
-                // Clone code 
+                echo 'Pulling code from Repository...'
                 checkout scm
             }
         }
@@ -18,7 +18,7 @@ pipeline {
             steps {
                 script {
                    echo 'Building Docker Images...'
-                   // Build app [cite: 608]
+                   // Sử dụng docker compose build để tạo các images từ Dockerfile đã sửa
                    sh 'docker compose build'
                 }
             }
@@ -26,28 +26,20 @@ pipeline {
         
         stage('Trivy FS Scan') {
             steps {
-                // Quét bảo mật filesystem [cite: 610]
-                // Dùng docker chạy trivy để không phải cài đặt trivy lên máy host
+                echo 'Scanning File System for security vulnerabilities...'
+                // Quét bảo mật filesystem và lưu báo cáo
                 sh 'docker run --rm -v $WORKSPACE:/root/.cache/ aquasec/trivy fs . > trivy_report.txt'
-                sh 'cat trivy_report.txt' // In kết quả ra log
+                sh 'cat trivy_report.txt' 
             }
         }
         
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    // Phân tích code [cite: 611]
                     def scannerHome = tool 'SonarScanner'
                     withSonarQubeEnv('SonarQube') {
-                        sh """
-                        ${scannerHome}/bin/sonar-scanner \
-                        -Dsonar.projectKey=microservice-app \
-                        -Dsonar.sources=. \
-                        -Dsonar.exclusions=**/users-api/** \
-                        -Dsonar.host.url=http://sonarqube:9000 \
-                        -Dsonar.login=$SONAR_TOKEN
-                        """
-                        // Lưu ý: users-api bị exclude theo báo cáo [cite: 612]
+                        // VIẾT LIỀN TRÊN 1 DÒNG để tránh lỗi "Unrecognized option" do khoảng trắng/nối chuỗi
+                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=microservice-app -Dsonar.sources=. -Dsonar.exclusions=**/users-api/** -Dsonar.host.url=http://sonarqube:9000 -Dsonar.login=${SONAR_TOKEN}"
                     }
                 }
             }
@@ -56,12 +48,22 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    echo 'Deploying...'
-                    // Deploy app 
+                    echo 'Deploying Microservices...'
+                    // Dừng các container cũ và khởi chạy bản mới nhất
                     sh 'docker compose down'
                     sh 'docker compose up -d'
+                    echo 'Application is running at http://<Your-EC2-IP>:8081'
                 }
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'Chúc mừng! Toàn bộ Pipeline đã hoàn thành thành công.'
+        }
+        failure {
+            echo 'Pipeline thất bại. Vui lòng kiểm tra Console Output để xem chi tiết lỗi.'
         }
     }
 }
