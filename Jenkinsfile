@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Preparation') {
             steps {
-                git url: "https://github.com/philogn/microservice-app-example.git", branch: 'master'
+                git url: "https://github.com/22520802/microservice-app-example.git", branch: 'master'
             }
         }
 
