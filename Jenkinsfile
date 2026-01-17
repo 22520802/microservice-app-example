@@ -16,7 +16,7 @@ pipeline {
             steps {
                 echo 'Building...'
                 // Simulate build process
-                sh 'docker-compose build'
+                sh 'docker compose build'
             }
         }
 
@@ -43,8 +43,8 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo 'Deploying...'
-                sh 'docker-compose down'
-                sh 'docker-compose up -d'
+                sh 'docker compose down'
+                sh 'docker compose up -d'
             }
         }
     }
